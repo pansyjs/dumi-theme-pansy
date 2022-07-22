@@ -1,6 +1,6 @@
 {
   "name": "@pansy/dumi-theme-pansy",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "The pansy theme of dumi",
   "scripts": {
     "start": "pnpm -r --filter dumi-theme-pansy-site run start",
