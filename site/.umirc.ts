@@ -1,12 +1,11 @@
-import { defineConfig, IConfig } from 'dumi';
+import { defineConfig } from 'dumi';
 
-const isProd =
-  process.env.NODE_ENV === 'production' && process.env.PREVIEW_PR !== 'true';
+const isProd = process.env.NODE_ENV === 'production';
 
 export default defineConfig({
   ssr: isProd ? {} : false,
   exportStatic: isProd ? {} : false,
-  title: 'Tuya Theme',
+  title: 'Pansy Theme',
   mode: 'site',
   locales: [
     ['zh', '中文'],
@@ -25,11 +24,11 @@ export default defineConfig({
     ],
   ],
   theme: {
-    'primary-color': '#ff4800',
+    'primary-color': '#2B6DE5',
   },
   themeConfig: {
     repository: {
-      url: 'https://github.com/youngjuning/dumi-theme-tuya',
+      url: 'https://github.com/pansy/dumi-theme-pansy',
       branch: 'master',
       platform: 'github',
       dir: '/site'
@@ -42,14 +41,14 @@ export default defineConfig({
       null,
       {
         title: 'Github',
-        path: 'https://github.com/youngjuning/dumi-theme-tuya',
+        path: 'https://github.com/pansyjs/dumi-theme-pansy',
       },
     ],
     en: [
       null,
       {
         title: 'Github',
-        path: 'https://github.com/youngjuning/dumi-theme-tuya',
+        path: 'https://github.com/pansyjs/dumi-theme-pansy',
       },
     ],
   },
@@ -58,6 +57,6 @@ export default defineConfig({
   },
   hash: isProd,
   publicPath: isProd
-    ? '//cdn.jsdelivr.net/gh/youngjuning/dumi-theme-tuya@gh-pages/'
+    ? '//cdn.jsdelivr.net/gh/pansyjs/dumi-theme-pansy@gh-pages/'
     : '/',
-} as IConfig);
+});

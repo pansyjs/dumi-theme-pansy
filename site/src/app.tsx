@@ -1,5 +1,5 @@
 import './app.less';
-import { NotFound } from '@tuya/dumi-theme-tuya/exports';
+import { NotFound } from '@pansy/dumi-theme-pansy/exports';
 
 export function patchRoutes({ routes }) {
   routes[2].routes.push({

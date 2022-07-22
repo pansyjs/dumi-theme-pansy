@@ -15,13 +15,13 @@ title: 快速上手
  
 <center><p align="center"><img src="https://images.tuyacn.com/rms-static/3dec3ee0-b3d9-11eb-9adb-1b12f902f79d-1620903119310.png?tyName=210513tuya.png" width="200px" /></p></center>
 
-<center><h1>@tuya/dumi-theme-tuya</h1></center>
+<center><h1>@pansy/dumi-theme-pansy</h1></center>
 
 <center><p align="center">Tuya组件文档主题</p></center>
 
 <center><p align="center">
-  <a href="https://www.npmjs.com/package/@tuya/dumi-theme-tuya" target="_blank">
-    <img src="https://img.shields.io/npm/v/@tuya/dumi-theme-tuya/latest.svg" />
+  <a href="https://www.npmjs.com/package/@pansy/dumi-theme-pansy" target="_blank">
+    <img src="https://img.shields.io/npm/v/@pansy/dumi-theme-pansy/latest.svg" />
   </a>&nbsp;
 </p>
 </center>
@@ -49,7 +49,7 @@ yarn create @umijs/dumi-app
 2. 安装 Tuya 主题
 
 ```shell
-yarn add @tuya/dumi-theme-tuya
+yarn add @pansy/dumi-theme-pansy
 ```
 
 3. 配置多语言标识符
