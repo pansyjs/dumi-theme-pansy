@@ -1,224 +1,121 @@
-/* eslint-disable jsx-a11y/no-static-element-interactions */
-/* eslint-disable react/no-danger */
-import type { IRouteComponentProps } from '@umijs/types';
-import { context, Link } from 'dumi/theme';
-import i18n from 'i18next';
-import React, { useContext, useState } from 'react';
-import { initReactI18next } from 'react-i18next';
-import NotFoundPage from './antv/404';
-import Banner from './antv/Banner/index';
-import Cases from './antv/Cases/Cases';
-import Ideas from './antv/Features';
-import Footer from './antv/Footer';
+import './style/layout.less';
+
+import axios from 'axios';
+import { context } from 'dumi/theme';
+import React, {
+    CSSProperties, useContext, useEffect, useLayoutEffect, useMemo, useState
+} from 'react';
+
+import { IRouteComponentProps } from '@umijs/types';
+
 import Navbar from './components/Navbar';
 import SearchBar from './components/SearchBar';
 import SideMenu from './components/SideMenu';
-import SlugList from './components/SlugList';
-import './style/layout.less';
-
-i18n
-  .use(initReactI18next) // passes i18n down to react-i18next
-  .init({
-    initImmediate: false,
-    fallbackLng: 'zh',
-    keySeparator: false,
-    react: {
-      useSuspense: false,
-    },
-  });
-
-
-const isEmpty = obj => {
-  return Object.keys(obj).length === 0;
-};
-
-const processRedirect = (context, location) => {
-  const { pathname } = location;
-  const { meta, routes } = context;
-
-  const isEmptyMeta = isEmpty(meta);
-  let matchRoute = { meta: {} };
-  const needRedirectPath = ['/zh', '/zh/', '/zh-CN', '/zh-CN/', '/en', '/en/', '/en-US', '/en-US/'];
-  const isInclude = needRedirectPath.some(item => item === pathname);
-  if (isEmptyMeta) {
-    if (isInclude) {
-      // 存在重定向需求
-      const isZh = pathname.slice(1, 3) === 'zh';
-      const isEn = pathname.slice(1, 3) === 'en';
-      if (isZh) {
-        matchRoute = routes.find(item => {
-          return item.path === '/';
-        });
-      }
-      if (isEn) {
-        matchRoute = routes.find(item => {
-          return item.path === '/en-US';
-        });
-      }
-    }
-  }
-
-  return {
-    meta: isEmptyMeta ? matchRoute.meta : meta,
-    isDirect: isInclude,
-  };
-};
-
-const Hero = hero => (
-  <div className="__dumi-default-layout-hero">
-    {hero.image && <img src={hero.image} alt="banner" />}
-    <h1>{hero.title}</h1>
-    <div dangerouslySetInnerHTML={{ __html: hero.desc }} />
-    {hero.actions &&
-      hero.actions.map(action => (
-        <Link to={action.link} key={action.text}>
-          <button type="button">{action.text}</button>
-        </Link>
-      ))}
-  </div>
-);
-
-const BannerPanel = banner => {
-  const { image, title, desc, actions, notifications } = banner;
-  const description = <div dangerouslySetInnerHTML={{ __html: desc }} />;
-  const coverImage = <img alt="graphin" style={{ width: '100%', marginTop: '20%' }} src={image} />;
-
-  return (
-    <Banner
-      coverImage={coverImage}
-      title={title}
-      // @ts-ignore
-      description={description}
-      notifications={notifications}
-      buttons={actions}
-      className="banner"
-    />
-  );
-};
-
-const Features = features => (
-  <div className="__dumi-default-layout-features">
-    {features.map(feat => (
-      <dl key={feat.title} style={{ backgroundImage: feat.icon ? `url(${feat.icon})` : undefined }}>
-        {feat.link ? (
-          <Link to={feat.link}>
-            <dt>{feat.title}</dt>
-          </Link>
-        ) : (
-          <dt>{feat.title}</dt>
-        )}
-        <dd dangerouslySetInnerHTML={{ __html: feat.desc }} />
-      </dl>
-    ))}
-  </div>
-);
+import SlugsList from './components/SlugList';
+import { CodeContext, CodeCtxType } from './context';
+import { useCondition, useHandlePostPath, useLinkMap } from './hooks';
+import { Renderer } from './pages';
+import { Home } from './pages/home';
 
 const Layout: React.FC<IRouteComponentProps> = ({ children, location }) => {
-  const Context = useContext(context);
   const {
-    config: { mode, repository },
-    locale,
-  } = Context;
+    config: {
+      mode,
+      theme: { apiData },
+    },
+    meta,
+  } = useContext(context);
+  const isHome = useCondition('isHome', location);
+  const showSideMenu = useCondition('showSideMenu', location);
+  const showSlugs = useCondition('showSlugs', location);
 
-  const { meta, isDirect } = processRedirect(Context, location);
-  const { url: repoUrl, branch, platform } = repository;
   const [menuCollapsed, setMenuCollapsed] = useState<boolean>(true);
-  const isSiteMode = mode === 'site';
-  const showHero = isSiteMode && meta.hero;
-  const showBanner = isSiteMode && meta.banner;
-  const showCases = isSiteMode && meta.cases;
-  const showFeatures = isSiteMode && meta.features;
-  const showIdeas = isSiteMode && meta.ideas;
-  const showSideMenu = meta.sidemenu !== false && !showHero && !showBanner && !showFeatures && !meta.gapless;
-  const showSlugs =
-    !showHero &&
-    !showBanner &&
-    !showFeatures &&
-    Boolean(meta.slugs?.length) &&
-    (meta.toc === 'content' || meta.toc === undefined) &&
-    !meta.gapless;
-  const isCN = /^zh|cn$/i.test(locale);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const updatedTime: any = new Date(meta.updatedTime).toLocaleString([], { hour12: false });
-  const repoPlatform =
-    { github: 'GitHub', gitlab: 'GitLab' }[(repoUrl || '').match(/(github|gitlab)/)?.[1] || 'nothing'] || platform;
-  // 等dumi最新版发布后解决路由匹配问题
-  if (isEmpty(meta) && !isDirect) {
-    return (
-      <div>
-        <div
-          style={{ marginBottom: '60px' }}
-          className="__dumi-default-layout home"
-          data-route={location.pathname}
-          data-show-sidemenu={false}
-          data-show-slugs={false}
-          data-site-mode="site"
-          data-gapless={String(!!meta.gapless)}
-          onClick={() => {
-            if (menuCollapsed) return;
-            setMenuCollapsed(true);
-          }}
-        >
-          <div style={{ height: '60px' }} />
-          <Navbar
-            location={location}
-            navPrefix={<SearchBar />}
-            onMobileMenuClick={ev => {
-              setMenuCollapsed(val => !val);
-              ev.stopPropagation();
-            }}
-          />
-          <NotFoundPage />
-      
-          <Footer location={window.location} githubUrl={repoUrl} rootDomain="https://antv.vision" />
-        </div>
-      </div>
-    );
-  }
+
+  const [ctxValues, setCtxValues] = useState<Partial<CodeCtxType>>({
+    themes: [],
+    currentTheme: null,
+    apiData: null,
+    desc: null,
+  });
+
+  // 这里重置desc
+  // 使用layout effect优先级比Desc的effect高
+  useLayoutEffect(() => {
+    setCtxValues({ ...ctxValues, desc: null, descHideTitle: 'false' });
+  }, [location.pathname]);
+
+  const linkMap = useLinkMap();
+
+  useEffect(() => {
+    if (apiData && ctxValues.apiData === null) {
+      axios
+        .get(apiData)
+        .then(res => setCtxValues({ ...ctxValues, apiData: res.data }));
+    }
+  }, [ctxValues]);
+
+  useHandlePostPath();
+
+  const layoutStyle = useMemo(() => {
+    const style: CSSProperties = {
+      paddingBottom: isHome ? 198 : 50,
+      overflow: isHome ? 'hidden' : 'unset',
+      backgroundSize: 'cover',
+    };
+    const background = meta?.hero?.background;
+    if (background) {
+      style.backgroundImage = `url(${background})`;
+    }
+    return style;
+  }, [isHome, meta]);
 
   return (
-    <div
-      className={`__dumi-default-layout ${showBanner ? 'home' : ''}`}
-      data-route={location.pathname}
-      data-show-sidemenu={String(showSideMenu)}
-      data-show-slugs={String(showSlugs)}
-      data-site-mode={isSiteMode}
-      data-gapless={String(!!meta.gapless)}
-      onClick={() => {
-        if (menuCollapsed) return;
-        setMenuCollapsed(true);
+    <CodeContext.Provider
+      value={{
+        ...ctxValues,
+        linkMap,
+        update: args => args && setCtxValues({ ...ctxValues, ...args }),
       }}
     >
-      <Navbar
-        location={location}
-        navPrefix={<SearchBar />}
-        onMobileMenuClick={ev => {
-          setMenuCollapsed(val => !val);
-          ev.stopPropagation();
+      <div
+        className="__dumi-default-layout"
+        data-route={location.pathname}
+        data-show-sidemenu={String(showSideMenu)}
+        data-show-slugs={String(showSlugs)}
+        data-site-mode={mode === 'site'}
+        data-gapless={String(!!meta.gapless)}
+        data-use-bg={isHome}
+        onClick={() => {
+          if (menuCollapsed) return;
+          setMenuCollapsed(true);
         }}
-      />
-      {showSideMenu && <SideMenu mobileMenuCollapsed={menuCollapsed} location={location} />}
-      {showSlugs && <SlugList slugs={meta.slugs} className="__dumi-default-layout-toc" />}
-      {showBanner && BannerPanel(meta.banner)}
-      {showHero && Hero(meta.hero)}
-      {showFeatures && Features(meta.features)}
-      {showIdeas && <Ideas features={meta.ideas} style={{ width: '100%' }} />}
-      {showCases && <Cases cases={meta.cases} className="graph-cases" />}
-      <div className="__dumi-default-layout-content">
-        {children}
-        {showSideMenu && (
-          <div className="__dumi-default-layout-footer-meta">
-            {repoPlatform && (
-              <Link to={`${repoUrl}/edit/${branch}/${meta.filePath}`}>
-                {isCN ? `在 ${repoPlatform} 上编辑此页` : `Edit this doc on ${repoPlatform}`}
-              </Link>
-            )}
-            <span data-updated-text={isCN ? '最后更新时间：' : 'Last update: '}>{updatedTime}</span>
-          </div>
+        style={layoutStyle}
+      >
+        {/* 顶部导航渲染 */}
+        <Navbar
+          isHome={isHome}
+          location={location}
+          navPrefix={<SearchBar location={location} />}
+          onMobileMenuClick={ev => {
+            setMenuCollapsed(val => !val);
+            ev.stopPropagation();
+          }}
+        />
+        {showSlugs && (
+          <SlugsList slugs={meta.slugs} className="__dumi-default-layout-toc" />
         )}
-        {!showSideMenu && <Footer location={window.location} githubUrl={repoUrl} rootDomain="https://antv.vision" />}
+        {/* 侧边栏渲染 */}
+        {showSideMenu && (
+          <SideMenu mobileMenuCollapsed={menuCollapsed} location={location} />
+        )}
+        {/* 页面渲染 */}
+        {isHome ? (
+          <Home content={children} />
+        ) : (
+          <Renderer location={location} content={children} />
+        )}
       </div>
-    </div>
+    </CodeContext.Provider>
   );
 };
 

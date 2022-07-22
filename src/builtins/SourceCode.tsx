@@ -1,17 +1,10 @@
-import { useCopy } from 'dumi/theme';
-import type { Language } from 'prism-react-renderer';
-import Highlight, { defaultProps } from 'prism-react-renderer';
-import 'prismjs/themes/prism.css';
-import React from 'react';
 import './SourceCode.less';
 
-/**
- * define DSL which can be highlighted as similar language
- */
-const SIMILAR_DSL = {
-  acss: 'css',
-  axml: 'xml',
-};
+import axios from 'axios';
+import { context, useCopy } from 'dumi/theme';
+import Highlight, { defaultProps, Language } from 'prism-react-renderer';
+import theme from 'prism-react-renderer/themes/github';
+import React, { useContext, useEffect, useRef } from 'react';
 
 export interface ICodeBlockProps {
   code: string;
@@ -19,18 +12,73 @@ export interface ICodeBlockProps {
   showCopy?: boolean;
 }
 
+let index = 0;
+let last = '';
+const getIndex = (ref: string) => {
+  if (ref === last) {
+    index++;
+  } else {
+    index = 0;
+  }
+  last = ref;
+  return index;
+};
+
+const getStartPos = (token: string) => {
+  const pref = token.match(/^( +)/);
+  if (pref) {
+    return pref[1].length;
+  }
+  return 0;
+};
+
+const createTokenSelector = (index: number, lang: string, type: any) =>
+  `span[data-${index}-${lang}-token='${type.targetString}-${type.line}-${type.character}']`;
+
+const selectToken = (index: number, lang: string, type: any) => {
+  if (type && type.targetString) {
+    return document.querySelector(createTokenSelector(index, lang, type));
+  }
+};
+
 export default ({ code, lang, showCopy = true }: ICodeBlockProps) => {
   const [copyCode, copyStatus] = useCopy();
 
+  const ctx = useContext(context);
+  const _demo = ctx.meta.demo;
+  const index = getIndex(_demo);
+
+  useEffect(() => {
+    const typeAssetsUrl = ctx?.config?.theme?.typeAssetsUrl;
+    if (typeAssetsUrl && _demo) {
+      axios.get(typeAssetsUrl).then(res => {
+        const props = res?.data;
+        const types = props?.[_demo]?.[index];
+        if (Array.isArray(types)) {
+          types.forEach(type => {
+            const dom =
+              selectToken(index, 'jsx', type) ??
+              selectToken(index, 'tsx', type) ??
+              selectToken(index, 'ts', type) ??
+              selectToken(index, 'js', type);
+            if (dom) {
+              dom.setAttribute(
+                'data-lsp',
+                `${type.text ?? ''}\n${type.docs ?? ''}`,
+              );
+            }
+          });
+        }
+      });
+    }
+  }, [index, _demo]);
+
+  const ref = useRef(0);
+  const lastLine = useRef(0);
+
   return (
     <div className="__dumi-default-code-block">
-      {/** @ts-ignore */}
-      <Highlight
-        {...defaultProps}
-        code={code}
-        language={SIMILAR_DSL[lang] || lang}
-        theme={undefined}
-      >
+      <Highlight {...defaultProps} code={code} language={lang} theme={theme}>
         {({ className, style, tokens, getLineProps, getTokenProps }) => (
           <pre className={className} style={style}>
             {showCopy && (
@@ -42,9 +90,24 @@ export default ({ code, lang, showCopy = true }: ICodeBlockProps) => {
             )}
             {tokens.map((line, i) => (
               <div {...getLineProps({ line, key: i })}>
-                {line.map((token, key) => (
-                  <span {...getTokenProps({ token, key })} />
-                ))}
+                {line.map((token, key) => {
+                  if (i !== lastLine.current) {
+                    ref.current = 0;
+                  }
+                  lastLine.current = i;
+
+                  const last = ref.current;
+                  ref.current += token.content.length;
+                  const props = getTokenProps({ token, key });
+                  if (/ /.test(token.content)) {
+                    return <span {...props} />;
+                  }
+                  return React.createElement('span', {
+                    ...props,
+                    [`data-${index}-${lang}-token`]: `${token.content.trim()}-${i}-${last +
+                      getStartPos(token.content)}`,
+                  });
+                })}
               </div>
             ))}
           </pre>

@@ -1,17 +1,32 @@
-import type { FC } from 'react';
-import React, { useContext } from 'react';
-import { context, Link, NavLink } from 'dumi/theme';
-import LocaleSelect from './LocaleSelect';
-import SlugList from './SlugList';
 import './SideMenu.less';
+
+import { Menu } from 'antd';
+import { AnchorLink, context, Link, NavLink } from 'dumi/theme';
+import React, { FC, useContext, useMemo } from 'react';
+
+import { useDerivedStateFromProps } from '../hooks/useDerivedStateFromProps';
+import { badgeScanner, parseHref, parseLinkTitle } from '../parser';
+import { getArray } from '../utils';
+import LocaleSelect from './LocaleSelect';
 
 interface INavbarProps {
   mobileMenuCollapsed: boolean;
   location: any;
-  darkPrefix?: React.ReactNode;
 }
 
-const SideMenu: FC<INavbarProps> = ({ mobileMenuCollapsed, location, darkPrefix }) => {
+const getDisplayTitle = (title: string) => {
+  let text = title ? title.replace(badgeScanner, '') : title;
+  text = parseHref(text);
+  return text;
+};
+
+const getSlugItemKey = (slug: { value: string }) =>
+  typeof slug?.value === 'string' && slug.value.trim().toLowerCase();
+// toc 子列表不显示父节点（depth=1为父节点）
+const getSlugsList = (meta: any) =>
+  getArray<any>(meta?.slugs).filter(s => s.depth !== 1);
+
+const SideMenu: FC<INavbarProps> = ({ mobileMenuCollapsed, location }) => {
   const {
     config: {
       logo,
@@ -20,16 +35,28 @@ const SideMenu: FC<INavbarProps> = ({ mobileMenuCollapsed, location, darkPrefix 
       mode,
       repository: { url: repoUrl },
     },
-    menu,
     nav: navItems,
     base,
     meta,
+    menu,
   } = useContext(context);
   const isHiddenMenus =
     Boolean((meta.hero || meta.features || meta.gapless) && mode === 'site') ||
     meta.sidemenu === false ||
     undefined;
 
+  const defaultOpenKeys = useMemo(
+    () =>
+      menu.reduce(
+        (acc, item) => (item.children ? acc.concat(item.title) : acc),
+        [],
+      ),
+    [menu],
+  );
+
+  const [openKeys, setOpenKeys] = useDerivedStateFromProps(defaultOpenKeys);
+
+  const isTocMenu = meta.toc === 'menu';
   return (
     <div
       className="__dumi-default-menu"
@@ -60,9 +87,8 @@ const SideMenu: FC<INavbarProps> = ({ mobileMenuCollapsed, location, darkPrefix 
           )}
         </div>
         {/* mobile nav list */}
-
-        <div className="__dumi-default-menu-mobile-area">
-          {!!navItems.length && (
+        {navItems.length ? (
+          <div className="__dumi-default-menu-mobile-area">
             <ul className="__dumi-default-menu-nav-list">
               {navItems.map(nav => {
                 const child = Boolean(nav.children?.length) && (
@@ -77,68 +103,127 @@ const SideMenu: FC<INavbarProps> = ({ mobileMenuCollapsed, location, darkPrefix 
 
                 return (
                   <li key={nav.path || nav.title}>
-                    {nav.path ? <NavLink to={nav.path}>{nav.title}</NavLink> : nav.title}
+                    {nav.path ? (
+                      <NavLink to={nav.path}>{nav.title}</NavLink>
+                    ) : (
+                      nav.title
+                    )}
                     {child}
                   </li>
                 );
               })}
             </ul>
-          )}
-          {/* site mode locale select */}
-          <LocaleSelect location={location} />
-          {darkPrefix}
-        </div>
+            {/* site mode locale select */}
+            <LocaleSelect location={location} />
+          </div>
+        ) : (
+          <div className="__dumi-default-menu-doc-locale">
+            {/* doc mode locale select */}
+            <LocaleSelect location={location} />
+          </div>
+        )}
         {/* menu list */}
         <ul className="__dumi-default-menu-list">
-          {!isHiddenMenus &&
-            menu.map(item => {
-              // always use meta from routes to reduce menu data size
-              const hasSlugs = Boolean(meta.slugs?.length);
-              const hasChildren = item.children && Boolean(item.children.length);
-              const show1LevelSlugs =
-                meta.toc === 'menu' && !hasChildren && hasSlugs && item.path === location.pathname.replace(/([^^])\/$/, '$1');
-              const menuPaths = hasChildren
-                ? item.children.map(i => i.path)
-                : [
-                    item.path,
-                    // handle menu group which has no index route and no valid children
-                    location.pathname.startsWith(`${item.path}/`) && meta.title === item.title
-                      ? location.pathname
-                      : null,
-                  ];
+          {!isHiddenMenus && (
+            <Menu
+              openKeys={openKeys}
+              selectedKeys={isTocMenu ? [location?.hash] : [meta.title]}
+              onOpenChange={setOpenKeys}
+              mode="inline"
+            >
+              {menu.map(item => {
+                // always use meta from routes to reduce menu data size
+                const hasSlugs = Boolean(meta?.slugs?.length);
+                const hasChildren =
+                  item.children && Boolean(item.children.length);
+                const show1LevelSlugs =
+                  meta.toc === 'menu' &&
+                  !hasChildren &&
+                  hasSlugs &&
+                  item.path === location.pathname.replace(/([^^])\/$/, '$1');
 
-              return (
-                <li key={item.path || item.title}>
-                  <NavLink
-                    to={item.path}
-                    isActive={() => menuPaths.includes(location.pathname)}
-                  >
-                    {item.title}
-                  </NavLink>
-                  {/* group children */}
-                  {Boolean(item.children && item.children.length) && (
-                    <ul>
-                      {item.children.map(child => (
-                        <li key={child.path}>
-                          <NavLink to={child.path} exact>
-                            <span>{child.title}</span>
-                          </NavLink>
-                          {/* group children slugs */}
-                          {Boolean(
-                            meta.toc === 'menu' &&
-                            typeof window !== 'undefined' &&
-                            child.path === location.pathname &&
-                            hasSlugs,
-                          ) && <SlugList slugs={meta.slugs} />}
-                        </li>
+                if (Boolean(item.children && item.children.length)) {
+                  return (
+                    <Menu.SubMenu
+                      key={item.title}
+                      title={getDisplayTitle(item.title)}
+                    >
+                      {item.children.map(child => {
+                        const isGroup = Boolean(
+                          meta.toc === 'menu' &&
+                          typeof window !== 'undefined' &&
+                          child.path === location.pathname &&
+                          hasSlugs,
+                        );
+                        if (isGroup) {
+                          return (
+                            <Menu.ItemGroup
+                              title={getDisplayTitle(child.title)}
+                              key={child.title}
+                            >
+                              {getSlugsList(meta).map(slug => (
+                                <Menu.Item key={`#${getSlugItemKey(slug)}`}>
+                                  <AnchorLink to={`#${slug.heading}`}>
+                                    <span>{slug.value}</span>
+                                  </AnchorLink>
+                                </Menu.Item>
+                              ))}
+                            </Menu.ItemGroup>
+                          );
+                        }
+                        const { link } = parseLinkTitle(child.title);
+                        return (
+                          <Menu.Item key={child.title} onClick={() => {
+                            if (link) {
+                              window.location.href = link
+                            }
+                          }}>
+                            {link ? (
+                              <a>{getDisplayTitle(child.title)}</a>
+                            ) : (
+                              <NavLink to={child.path} exact>
+                                <span>{getDisplayTitle(child.title)}</span>
+                              </NavLink>
+                            )}
+                          </Menu.Item>
+                        );
+                      })}
+                    </Menu.SubMenu>
+                  );
+                }
+
+                if (show1LevelSlugs) {
+                  return (
+                    <Menu.ItemGroup title={getDisplayTitle(item.title)}>
+                      {getSlugsList(meta).map(slug => (
+                        <Menu.Item key={`#${getSlugItemKey(slug)}`}>
+                          <AnchorLink to={`#${slug.heading}`}>
+                            <span>{slug.value}</span>
+                          </AnchorLink>
+                        </Menu.Item>
                       ))}
-                    </ul>
-                  )}
-                  {/* group slugs */}
-                  {show1LevelSlugs && <SlugList slugs={meta.slugs} />}
-                </li>
-              );
-            })}
+                    </Menu.ItemGroup>
+                  );
+                }
+
+                const { link } = parseLinkTitle(item.title);
+                return (
+                  <Menu.Item key={item.title}>
+                    {link ? (
+                      getDisplayTitle(item.title)
+                    ) : (
+                      <NavLink
+                        to={item.path}
+                        exact={!(item.children && item.children.length)}
+                      >
+                        {getDisplayTitle(item.title)}
+                      </NavLink>
+                    )}
+                  </Menu.Item>
+                );
+              })}
+            </Menu>
+          )}
         </ul>
       </div>
     </div>

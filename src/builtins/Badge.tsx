@@ -1,4 +1,7 @@
-import React from 'react';
 import './Badge.less';
 
-export default (props: any) => <span className="__dumi-default-badge" {...props} />;
+import React from 'react';
+
+export default (props) => (
+  <span className="__dumi-default-badge" {...props} />
+);

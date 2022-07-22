@@ -1,5 +1,6 @@
-import React, { useRef, useEffect, useState } from 'react';
 import './Example.less';
+
+import React, { useEffect, useRef, useState } from 'react';
 
 export default (props: { route: any }) => {
   const elm = useRef<HTMLIFrameElement>();
@@ -27,7 +28,12 @@ export default (props: { route: any }) => {
             />
           </span>
         </div>
-        <iframe src={props.route.meta.examplePath} ref={elm} style={{ height }} title="dumi" />
+        <iframe
+          src={props.route.meta.examplePath}
+          ref={elm}
+          style={{ height }}
+          title="dumi"
+        />
       </div>
     )
   );

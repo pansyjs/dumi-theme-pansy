@@ -3,24 +3,9 @@
 .@{prefix}-locale-select {
   position: relative;
   display: inline-block;
-  border: 1px solid @c-btn-border;
-  border-radius: 14px;
+  border-radius: 2px;
   transition: background 0.2s;
-
-  [data-prefers-color=dark] & {
-    border: 1px solid @c-btn-border-dark;
-  }
-
-  @media @mobile {
-    margin-top: 6px;
-  }
-
-  &:hover {
-    background-color: #fafafa;
-    [data-prefers-color=dark] & {
-      background-color: rgba(255, 255, 255, 0.1);
-    }
-  }
+  background-color: rgba(255, 255, 255, 0.09);
 
   &:not([data-locale-count='1']):not([data-locale-count='2'])::after {
     content: '';
@@ -38,22 +23,36 @@
   a,
   span,
   select {
-    padding: 0 24px 0 16px;
-    height: 28px;
+    display: block;
+    padding: 0 6px;
+    min-width: 52px;
+    height: 20px;
     text-align: center;
     text-decoration: none;
-    line-height: 28px;
+    line-height: 20px;
     appearance: none;
     border: 0;
-    font-size: 16px;
-    color: #7b7f8d;
+    font-size: 12px;
+    color: #fff;
     background: transparent;
     outline: none;
     cursor: pointer;
+    &:hover {
+      color: #ff4800;
+    }
   }
 
-  a,
-  span {
-    padding-right: 16px;
+  &[data-is-home='true'] {
+    border: 1px solid rgba(0, 0, 0, 0.11);
+
+    a,
+    span,
+    select {
+      color: #333333;
+      &:hover,
+      &.active {
+        color: @c-primary;
+      }
+    }
   }
 }

@@ -5,11 +5,6 @@
   border: 1px solid @c-border;
   border-radius: 1px;
 
-  [data-prefers-color=dark] & {
-    background-color: @c-bg-dark;
-    border-color: @c-border-dark;
-  }
-
   &[data-debug] {
     margin-top: 32px;
     border-color: #ffcb00;
@@ -45,7 +40,8 @@
         height: @s-btn;
         border-radius: 50%;
         background-color: #fd6458;
-        box-shadow: (@s-btn + @s-btn-gap) 0 0 #ffbf2b, (@s-btn + @s-btn-gap) * 2 0 0 #24cc3d;
+        box-shadow: (@s-btn + @s-btn-gap) 0 0 #ffbf2b,
+          (@s-btn + @s-btn-gap) * 2 0 0 #24cc3d;
       }
     }
 
@@ -67,10 +63,6 @@
   &-target {
     border-color: fade(@c-primary, 50%);
     box-shadow: 0 0 0 5px fade(@c-primary, 5%);
-
-    [data-prefers-color=dark] & {
-      box-shadow: 0 0 0 5px fade(@c-primary, 30%);
-    }
   }
 
   &-desc {
@@ -78,10 +70,6 @@
       padding: 1.2em 1em 1em;
       color: @c-text;
       border-top: 1px solid @c-border;
-
-      [data-prefers-color=dark] & {
-        border-color: @c-border-dark;
-      }
     }
 
     .markdown > p:first-child {
@@ -104,15 +92,14 @@
         color: @c-heading;
         font-size: inherit;
         font-weight: 500;
-        background: linear-gradient(to top, rgba(255, 255, 255, 1), rgba(255, 255, 255, 1) 50%, rgba(255, 255, 255, 0)) 100%;
+        background: linear-gradient(
+          to top,
+          rgba(255, 255, 255, 1),
+          rgba(255, 255, 255, 0)
+        );
         transform: translateY(-50%);
         pointer-events: auto;
         cursor: pointer;
-
-        [data-prefers-color=dark] & {
-          color: @c-heading-dark;
-          background: linear-gradient(to top, @c-bg-dark, @c-bg-dark 50%, rgba(255, 255, 255, 0)) 100%;
-        }
       }
 
       &:empty {
@@ -133,10 +120,6 @@
     padding: 0 1em;
     align-items: center;
     border-top: 1px dashed @c-border;
-
-    [data-prefers-color=dark] & {
-      border-color: @c-border-dark;
-    }
 
     > a:not(:last-child),
     > button:not(:last-child) {
@@ -159,10 +142,6 @@
       opacity: 0.6;
       outline: none;
       transition: opacity 0.2s, background 0.2s;
-
-      [data-prefers-color=dark] & {
-        opacity: 1;
-      }
 
       // expand click area
       &::after {
@@ -247,16 +226,8 @@
   &-source {
     border-top: 1px dashed @c-border;
 
-    [data-prefers-color=dark] & {
-      border-color: @c-border-dark;
-    }
-
     &-tab {
       border-top: 1px dashed @c-border;
-
-      [data-prefers-color=dark] & {
-        border-color: @c-border-dark;
-      }
 
       .@{prefix}-tabs-tab-btn {
         position: relative;
@@ -268,7 +239,6 @@
           position: absolute;
           margin-right: 4px;
           display: inline-block;
-          box-sizing: border-box;
         }
 
         &::before {
@@ -289,9 +259,6 @@
           background: #fff;
           border-bottom: 1px solid @c-secondary;
           transform: rotate(45deg);
-          [data-prefers-color=dark] & {
-            background: @c-bg-dark;
-          }
         }
       }
     }
@@ -366,10 +333,6 @@
     background: @c-primary;
     transition: left 0.2s, width 0.2s;
     pointer-events: none;
-
-    [data-prefers-color=dark] & {
-      background: @c-primary-dark;
-    }
   }
 
   &-dropdown {

@@ -1,6 +1,8 @@
 @import (reference) '../style/variables.less';
 
 ul[role='slug-list'] {
+  padding: 16px;
+  border-radius: 8px;
   &:empty {
     margin: 0 !important;
     padding: 0 !important;
@@ -8,11 +10,38 @@ ul[role='slug-list'] {
 
   li {
     > a.active {
-      color: darken(@c-primary, 2%);
+      color: #346ae5;
+      &::before {
+        background: #346ae5;
+      }
+    }
+    > a:hover {
+      color: #346ae5;
     }
 
     &[data-depth='3'] {
       padding-left: 12px;
+
+      a {
+        &::before {
+          background: @c-border;
+        }
+        &::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 12px;
+          bottom: 0;
+          display: inline-block;
+          width: 2px;
+          background: @c-border;
+        }
+        &.active {
+          &::after {
+            background: #346ae5;
+          }
+        }
+      }
     }
   }
 }

@@ -1,150 +1,89 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable jsx-a11y/control-has-associated-label */
-import { context, Link, NavLink } from 'dumi/theme';
-import type { FC, MouseEvent } from 'react';
-import React, { useContext } from 'react';
-import { useMedia } from 'react-use';
-import Logo from '../antv/Header/Logo';
-import Products from '../antv/Products';
-import LocaleSelect from './LocaleSelect';
 import './Navbar.less';
 
+import { context, Link, NavLink } from 'dumi/theme';
+import React, { FC, MouseEvent, useContext } from 'react';
 
+import { useCondition } from '../hooks';
+import { classnames } from '../utils';
+import LocaleSelect from './LocaleSelect';
 
 interface INavbarProps {
   location: any;
   navPrefix?: React.ReactNode;
   onMobileMenuClick: (ev: MouseEvent<HTMLButtonElement>) => void;
+  isHome?: boolean;
 }
 
-const Navbar: FC<INavbarProps> = ({ onMobileMenuClick, navPrefix, location }) => {
+const Navbar: FC<INavbarProps> = ({
+  onMobileMenuClick,
+  navPrefix,
+  location,
+  isHome,
+}) => {
   const {
     base,
     config: { mode, title, logo },
     nav: navItems,
-    //@ts-ignore
   } = useContext(context);
-
-  const isWide = useMedia('(min-width: 767.99px)', true);
-
-  const [productMenuVisible, setProductMenuVisible] = React.useState(false);
-  let productMenuHovering = false;
-  const onProductMouseEnter = (e: React.MouseEvent) => {
-    productMenuHovering = true;
-    e.persist();
-    setTimeout(() => {
-      // eslint-disable-next-line no-undef
-      if (e.target instanceof Element && e.target.matches(':hover')) {
-        setProductMenuVisible(true);
-      }
-    }, 200);
-  };
-  const onProductMouseLeave = (e: React.MouseEvent) => {
-    e.persist();
-    productMenuHovering = false;
-    setTimeout(() => {
-      if (productMenuHovering) {
-        return;
-      }
-      setProductMenuVisible(false);
-    }, 200);
-  };
-  const onToggleProductMenuVisible = () => {
-    setProductMenuVisible(!productMenuVisible);
-  };
-
-  const productItemProps = isWide
-    ? {
-        onMouseEnter: onProductMouseEnter,
-        onMouseLeave: onProductMouseLeave,
-      }
-    : {
-        onClick: onToggleProductMenuVisible,
-      };
+  const useBg = useCondition('isHome', location);
 
   return (
-    <div className="__dumi-default-navbar" data-mode={mode}>
+    <div
+      className="__dumi-default-navbar"
+      data-mode={mode}
+      data-is-home={isHome}
+      style={{
+        backgroundColor: isHome ? (useBg ? 'transparent' : '#fff') : '#212121',
+      }}
+    >
       {/* menu toogle button (only for mobile) */}
-      <button className="__dumi-default-navbar-toggle" onClick={onMobileMenuClick} />
+      <button
+        className="__dumi-default-navbar-toggle"
+        onClick={onMobileMenuClick}
+      />
       {/* logo & title */}
-      <div
-        className="__dumi-default-navbar-logo"
-        style={{
-          background: 'none',
-          height: '28px',
-          lineHeight: '28px',
-          paddingLeft: '0px',
-        }}
-      >
-      <a href={'https://antv.vision/'}>  
-         <Logo style={{ height: '28px', lineHeight: '28px' }} /> 
-      </a> 
-        <span
-          style={{
-            fontSize: '16px',
-            width: '1px',
-            height: '24px',
-            backgroundColor: '#ccc',
-            display: ' inline-block',
-            margin: '0 20px',
-          }}
-        />
-        <Link  to={base}>
-        <span style={{ fontSize: '16px', color: '#0d1a26', display: 'inline-block', verticalAlign: 'top' }}>
-          {title}
-        </span>
+      <div className="logo_wrapper">
+        <Link className="__dumi-default-navbar-logo" to={base}>
+          {logo ? <img src={logo as string} alt={title} /> : null}
+          <span className="label">{title}</span>
         </Link>
-       
+        <div className="search_wrapper">{navPrefix}</div>
       </div>
+      <span>
+        <nav className="navbar_links">
+          {/* nav */}
+          {navItems.map((nav, index) => {
+            const child = Boolean(nav.children?.length) && (
+              <ul>
+                {nav.children.map((item, i) => (
+                  <li key={i}>
+                    <NavLink to={item.path!}>{item.title}</NavLink>
+                  </li>
+                ))}
+              </ul>
+            );
 
-      <nav>
-        {navPrefix}
-        {/* nav */}
-        {navItems.map(nav => {
-          const child = Boolean(nav.children?.length) && (
-            <ul>
-              {nav.children.map(item => (
-                <li key={item.path}>
-                  <NavLink to={item.path}>{item.title}</NavLink>
-                </li>
-              ))}
-            </ul>
-          );
-
-          return (
-            <span key={nav.title || nav.path}>
-              {nav.path ? (
-                <NavLink to={nav.path} key={nav.path}>
-                  {nav.title}
-                </NavLink>
-              ) : (
-                nav.title
-              )}
-              {child}
-            </span>
-          );
-        })}
-        <span {...productItemProps}>
-          所有产品
-          <img
-            src="https://gw.alipayobjects.com/zos/antfincdn/FLrTNDvlna/antv.png"
-            alt="antv logo arrow"
-            className={`arrow ${productMenuVisible && 'open'}`}
-          />
-          <div
-            style={{
-              position: 'fixed',
-              top: ' 0px',
-              left: '0px',
-              width: ' 100%',
-              right: '0px',
-            }}
-          >
-            <Products show={productMenuVisible} rootDomain="ant.vison" language="zh" />
-          </div>
-        </span>
+            return (
+              <span
+                className={classnames('navbar_links-item', {
+                  sub: Boolean(nav.children?.length),
+                })}
+                key={index}
+              >
+                {nav.path ? (
+                  <NavLink to={nav.path} key={nav.path}>
+                    {nav.title}
+                  </NavLink>
+                ) : (
+                  nav.title
+                )}
+                {child}
+              </span>
+            );
+          })}
+        </nav>
         <LocaleSelect location={location} />
-      </nav>
+      </span>
     </div>
   );
 };

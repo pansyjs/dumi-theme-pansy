@@ -1,11 +1,14 @@
-import type { FC } from 'react';
-import React, { useContext } from 'react';
+import './LocaleSelect.less';
+
 // @ts-ignore
 import { history } from 'dumi';
 import { context, Link } from 'dumi/theme';
-import './LocaleSelect.less';
+import React, { FC, useContext } from 'react';
+
+import { useCondition } from '../hooks';
 
 const LocaleSelect: FC<{ location: any }> = ({ location }) => {
+  const isHome = useCondition('isHome', location);
   const {
     base,
     locale,
@@ -15,7 +18,8 @@ const LocaleSelect: FC<{ location: any }> = ({ location }) => {
 
   function getLocaleTogglePath(target: string) {
     const baseWithoutLocale = base.replace(`/${locale}`, '');
-    const pathnameWithoutLocale = location.pathname.replace(new RegExp(`^${base}(/|$)`), `${baseWithoutLocale}$1`) || '/';
+    const pathnameWithoutLocale =
+      location.pathname.replace(base, baseWithoutLocale) || '/';
 
     // append locale prefix to path if it is not the default locale
     if (target !== locales[0].name) {
@@ -34,9 +38,16 @@ const LocaleSelect: FC<{ location: any }> = ({ location }) => {
   }
 
   return firstDiffLocale ? (
-    <div className="__dumi-default-locale-select" data-locale-count={locales.length}>
+    <div
+      className="__dumi-default-locale-select"
+      data-locale-count={locales.length}
+      data-is-home={isHome}
+    >
       {locales.length > 2 ? (
-        <select value={locale} onChange={ev => history.push(getLocaleTogglePath(ev.target.value))}>
+        <select
+          value={locale}
+          onChange={ev => history.push(getLocaleTogglePath(ev.target.value))}
+        >
           {locales.map(localeItem => (
             <option value={localeItem.name} key={localeItem.name}>
               {localeItem.label}
@@ -44,7 +55,9 @@ const LocaleSelect: FC<{ location: any }> = ({ location }) => {
           ))}
         </select>
       ) : (
-        <Link to={getLocaleTogglePath(firstDiffLocale.name)}>{firstDiffLocale.label}</Link>
+        <Link to={getLocaleTogglePath(firstDiffLocale.name)}>
+          {firstDiffLocale.label}
+        </Link>
       )}
     </div>
   ) : null;
